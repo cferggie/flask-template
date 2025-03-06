@@ -1,36 +1,40 @@
 from . import db
+from datetime import datetime, timezone, timedelta
+import uuid
 
-# conversation model (table)
-class Conversation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True)
-    password = db.Column(db.String(150))
-    first_name = db.Column(db.String(150))
-    
+
+# conversations model (table)
+class Conversations(db.Model):
+    # define table attributes
+    conversation_id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
+    initial_user_message = db.Column(db.String(4096), nullable=False)
+    messages = db.relationship('Messages', backref='conversation', lazy=True)
+    summary = db.Column(db.String(50), nullable=False) # this will be the summary of the conversation 
+    conversation_url = db.Column(db.String(255), nullable=False) # this will be the url of the conversation
+
+    # TODO: add a summary column to the conversations table that uses the LLM to generate a summary of the topic iniated by the 1st user message
+
+    # string representation of the conversation
     def __repr__(self):
-        return f'<Conversation {self.email}>'
+        return f'<Conversation {self.conversation_id}>'
     
     @classmethod
-    def create(cls, email, password, first_name):
+    def create(cls, initial_user_message, summary, conversation_url):
         """Create a new conversation record"""
         conversation = cls(
-            email=email,
-            password=password,
-            first_name=first_name
+            initial_user_message=initial_user_message,
+            summary=summary[0:50], # for now we are passing in a static summary, but in the future we will use the LLM to generate a summary
+            conversation_url=conversation_url
         )
         db.session.add(conversation)
         db.session.commit()
         return conversation
     
     @classmethod
-    def get_by_email(cls, email):
-        """Get a conversation by email"""
-        return cls.query.filter_by(email=email).first()
-    
-    @classmethod
-    def get_by_id(cls, id):
-        """Get a conversation by id"""
-        return cls.query.get(id)
+    def get_by_conversation_id(cls, conversation_id):
+        """Get a conversation by conversation_id"""
+        return cls.query.get(conversation_id)
     
     @classmethod
     def get_all(cls):
@@ -39,6 +43,7 @@ class Conversation(db.Model):
     
     def update(self, **kwargs):
         """Update conversation attributes"""
+        # This sort of update is not needed, but I'm keeping it here for now for things like changing the convo summary 
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
@@ -48,4 +53,47 @@ class Conversation(db.Model):
         """Delete the conversation"""
         db.session.delete(self)
         db.session.commit()
+
+class Messages(db.Model):
+    # define table attributes
+    message_id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
+    content = db.Column(db.String(4096), nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
+    sender = db.Column(db.String(100), nullable=False) # this will either be "user" or "assistant"
+    
+    def __repr__(self):
+        return f'<Message {self.content}>'
+    
+    @classmethod
+    def create_user_message(cls, content, conversation_id):
+        """Create a new user message record"""
+        message = cls(
+            content=content,
+            conversation_id=conversation_id, # implement this by calling the get_by_conversation_id method on the Conversations model in the call u make
+            sender="user"
+        )
+        db.session.add(message)
+        db.session.commit()
+        return message
+    
+    @classmethod
+    def create_assistant_message(cls, content, conversation_id):
+        """Create a new assistant message record"""
+        message = cls(
+            content=content,
+            conversation_id=conversation_id,
+            sender="assistant"
+        )
+        db.session.add(message)
+        db.session.commit()
+        return message
+    
+    @classmethod
+    def edit_user_message(cls, message_id, content):
+        """Edit a user message record"""
+        message = cls.query.get(message_id)
+        message.content = content
+        db.session.commit()
+        return message
 
