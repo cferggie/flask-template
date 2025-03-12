@@ -5,9 +5,16 @@ import uuid
 
 # conversations model (table)
 class Conversations(db.Model):
+    """
+    This model represents a conversation between a user and an assistant.
+    It contains the conversation_id, timestamp, messages, summary, and conversation_url.
+
+    lazy=True means that the messages are not loaded into memory until they are needed.
+    cascade='all, delete-orphan' means that when a conversation is deleted, all of the messages associated with it are also deleted.
+    """
     # define table attributes
     conversation_id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
     messages = db.relationship('Messages', backref='conversation', lazy=True, cascade='all, delete-orphan')
     summary = db.Column(db.String(50), nullable=False)  
     conversation_url = db.Column(db.String(255), nullable=False, unique=True)  # Added unique constraint
