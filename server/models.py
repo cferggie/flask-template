@@ -8,10 +8,9 @@ class Conversations(db.Model):
     # define table attributes
     conversation_id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
-    initial_user_message = db.Column(db.String(4096), nullable=False)
-    messages = db.relationship('Messages', backref='conversation', lazy=True)
-    summary = db.Column(db.String(50), nullable=False) # this will be the summary of the conversation 
-    conversation_url = db.Column(db.String(255), nullable=False) # this will be the url of the conversation
+    messages = db.relationship('Messages', backref='conversation', lazy=True, cascade='all, delete-orphan')
+    summary = db.Column(db.String(50), nullable=False)  
+    conversation_url = db.Column(db.String(255), nullable=False, unique=True)  # Added unique constraint
 
     # TODO: add a summary column to the conversations table that uses the LLM to generate a summary of the topic iniated by the 1st user message
 
@@ -23,11 +22,18 @@ class Conversations(db.Model):
     def create(cls, initial_user_message, summary, conversation_url):
         """Create a new conversation record"""
         conversation = cls(
-            initial_user_message=initial_user_message,
             summary=summary[0:50], # for now we are passing in a static summary, but in the future we will use the LLM to generate a summary
             conversation_url=conversation_url
         )
         db.session.add(conversation)
+        db.session.commit()
+        return conversation
+    
+    @classmethod
+    def add_message(cls, conversation_id, message):
+        """Add a message to a conversation"""
+        conversation = cls.query.get(conversation_id)
+        conversation.messages.append(message)
         db.session.commit()
         return conversation
     
