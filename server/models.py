@@ -26,7 +26,7 @@ class Conversations(db.Model):
         return f'<Conversation {self.conversation_id}>'
     
     @classmethod
-    def create(cls, initial_user_message, summary, conversation_url):
+    def create(cls, summary, conversation_url):
         """Create a new conversation record"""
         conversation = cls(
             summary=summary[0:50], # for now we are passing in a static summary, but in the future we will use the LLM to generate a summary

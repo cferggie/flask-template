@@ -23,7 +23,6 @@ def initial_message():
         
         # Create conversation first
         conversation = Conversations.create(
-            initial_user_message=content,
             summary=content,  # You might want to generate a proper summary using LLM
             conversation_url=conversation_url
         )
