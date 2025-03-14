@@ -47,10 +47,12 @@ def create_conversation():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# TODO: add a route to send a message to the conversation will require convo_id and convo_url
 @routes.route('/send_message', methods=['GET'])
 def send_message():
     try:
-        content = "Test Message"
+        content = request.json.get('message')
+        conversation_url = request.json.get('conversation_url')
         
         # Get conversation ID from request parameters or by URL search params
         conversation_id = 1
