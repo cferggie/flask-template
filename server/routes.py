@@ -14,8 +14,8 @@ def create_conversation():
     try:
         # Get the user's message from the request
         # this assumes that the request's Content-Type is application/json
-        # user_message = request.json.get('message')
-        user_message = "Hello, how are you?"
+        user_message = request.json.get('message')
+        # user_message = "Hello, how are you?"
         
         # Create conversation first
         conversation = Conversations.create(
@@ -45,10 +45,10 @@ def create_conversation():
 @routes.route('/send_message', methods=['GET'])
 def send_message():
     try:
-        # content = request.json.get('message')
-        # conversation_id = request.json.get('conversation_id')
-        content = "I am feeling well, thank you for asking"
-        conversation_id = 1
+        content = request.json.get('message')
+        conversation_id = request.json.get('conversation_id')
+        # content = "I am feeling well, thank you for asking"
+        # conversation_id = 1
         
         # Create a new message
         message = Messages.create_user_message(
