@@ -12,24 +12,24 @@ def health_check():
 from flask import jsonify
 from .models import Messages, Conversations
 
-@routes.route('/initial_message', methods=['GET'])
-def initial_message():
+@routes.route('/create_conversation', methods=['GET'])
+def create_conversation():
     try:
-            
-        content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-        
+        # Get the user's message from the request
+        user_message = request.json.get('message')
+       
         # Generate unique conversation URL
         conversation_url = str(uuid.uuid4())
         
         # Create conversation first
         conversation = Conversations.create(
-            summary=content,  # You might want to generate a proper summary using LLM
+            summary=user_message,  # You might want to generate a proper summary using LLM
             conversation_url=conversation_url
         )
         
         # Create the first message in the conversation
         user_message = Messages.create_user_message(
-            content=content,
+            content=user_message,
             conversation_id=conversation.conversation_id  # Use the actual integer ID
         )
         
