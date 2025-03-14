@@ -17,30 +17,18 @@ class Conversations(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
     messages = db.relationship('Messages', backref='conversation', lazy=True, cascade='all, delete-orphan')
     summary = db.Column(db.String(50), nullable=False)  
-    conversation_url = db.Column(db.String(255), nullable=False, unique=True)  # Added unique constraint
-
-    # TODO: add a summary column to the conversations table that uses the LLM to generate a summary of the topic iniated by the 1st user message
 
     # string representation of the conversation
     def __repr__(self):
         return f'<Conversation {self.conversation_id}>'
     
     @classmethod
-    def create(cls, summary, conversation_url):
+    def create(cls, summary):
         """Create a new conversation record"""
         conversation = cls(
             summary=summary[0:50], # for now we are passing in a static summary, but in the future we will use the LLM to generate a summary
-            conversation_url=conversation_url
         )
         db.session.add(conversation)
-        db.session.commit()
-        return conversation
-    
-    @classmethod
-    def add_message(cls, conversation_id, message):
-        """Add a message to a conversation"""
-        conversation = cls.query.get(conversation_id)
-        conversation.messages.append(message)
         db.session.commit()
         return conversation
     

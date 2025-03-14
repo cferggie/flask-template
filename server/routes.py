@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from .models import Messages, Conversations
-import uuid
 
 routes = Blueprint('routes', __name__)
 
@@ -9,33 +8,28 @@ routes = Blueprint('routes', __name__)
 def health_check():
     return jsonify({'status': 'healthy'})
 
-from flask import jsonify
-from .models import Messages, Conversations
-
+# create a conversation
 @routes.route('/create_conversation', methods=['GET'])
 def create_conversation():
     try:
         # Get the user's message from the request
-        user_message = request.json.get('message')
-       
-        # Generate unique conversation URL
-        conversation_url = str(uuid.uuid4())
+        # this assumes that the request's Content-Type is application/json
+        # user_message = request.json.get('message')
+        user_message = "Hello, how are you?"
         
         # Create conversation first
         conversation = Conversations.create(
             summary=user_message,  # You might want to generate a proper summary using LLM
-            conversation_url=conversation_url
         )
         
         # Create the first message in the conversation
         user_message = Messages.create_user_message(
             content=user_message,
-            conversation_id=conversation.conversation_id  # Use the actual integer ID
+            conversation_id=conversation.conversation_id
         )
         
         return jsonify({
             'conversation_id': conversation.conversation_id,
-            'conversation_url': conversation_url,
             'message': {
                 'id': user_message.message_id,
                 'content': user_message.content,
@@ -47,14 +41,13 @@ def create_conversation():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# TODO: add a route to send a message to the conversation will require convo_id and convo_url
+# send a message in a conversation
 @routes.route('/send_message', methods=['GET'])
 def send_message():
     try:
-        content = request.json.get('message')
-        conversation_url = request.json.get('conversation_url')
-        
-        # Get conversation ID from request parameters or by URL search params
+        # content = request.json.get('message')
+        # conversation_id = request.json.get('conversation_id')
+        content = "I am feeling well, thank you for asking"
         conversation_id = 1
         
         # Create a new message
@@ -65,7 +58,7 @@ def send_message():
         
         return jsonify({
             'message': {
-                'id': message.message_id,
+                'message_id': message.message_id,
                 'content': message.content,
                 'timestamp': message.timestamp.isoformat(),
                 'sender': message.sender
@@ -78,12 +71,12 @@ def send_message():
 @routes.route('/check_convos', methods=['GET'])
 def check_convos():
     try:
-        # Get all conversations
+        # Get convo by id
         conversation = Conversations.get_by_conversation_id(1)
         
         return jsonify({
             'conversation': {
-                'id': conversation.conversation_id,
+                'conversation_id': conversation.conversation_id,
                 'summary': conversation.summary,
                 'messages': [message.content for message in conversation.messages]
             }
