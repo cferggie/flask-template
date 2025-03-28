@@ -47,7 +47,6 @@ def create_conversation():
         ollama_response_timestamp = ollama_response.get('timestamp', '')
 
         # TODO: remove the <think> from the response and format timestamp
-        # TODO: add the ollama response to the database
         # TODO: separate date and time for use with frontend
 
         # Create a new assistant message
