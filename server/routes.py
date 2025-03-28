@@ -44,8 +44,11 @@ def create_conversation():
         # Parse the LLM response
         ollama_response = ollama_response.json()
         ollama_response_content = ollama_response.get('response', '')
+        ollama_response_timestamp = ollama_response.get('timestamp', '')
 
-        # TODO: remove the <think> from the response 
+        # TODO: remove the <think> from the response and format timestamp
+        # TODO: add the ollama response to the database
+        # TODO: separate date and time for use with frontend
 
         # Create a new message
         return jsonify({
@@ -57,7 +60,8 @@ def create_conversation():
                 'sender': user_message.sender
             },
             'ollama_response': {
-                'content': ollama_response_content
+                'content': ollama_response_content,
+                'timestamp': ollama_response_timestamp 
             }
         }), 201
         
