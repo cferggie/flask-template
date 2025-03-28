@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from .models import Messages, Conversations
+import requests
 
 routes = Blueprint('routes', __name__)
 
@@ -27,7 +28,26 @@ def create_conversation():
             content=user_message,
             conversation_id=conversation.conversation_id
         )
+
+        # Generate a response using the LLM
+        ollama_response = requests.post(
+            'http://localhost:11434/api/generate',
+            json={
+                'model': 'deepseek-r1',
+                'prompt': user_message.content,
+                'stream': False,
+                'keep_alive': 10,
+                'format': 'json'
+            }
+        )
         
+        # Parse the LLM response
+        ollama_response = ollama_response.json()
+        ollama_response_content = ollama_response.get('response', '')
+
+        # TODO: remove the <think> from the response 
+
+        # Create a new message
         return jsonify({
             'conversation_id': conversation.conversation_id,
             'message': {
@@ -35,6 +55,9 @@ def create_conversation():
                 'content': user_message.content,
                 'timestamp': user_message.timestamp.isoformat(),
                 'sender': user_message.sender
+            },
+            'ollama_response': {
+                'content': ollama_response_content
             }
         }), 201
         
