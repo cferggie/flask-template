@@ -50,6 +50,12 @@ def create_conversation():
         # TODO: add the ollama response to the database
         # TODO: separate date and time for use with frontend
 
+        # Create a new assistant message
+        assistant_message = Messages.create_assistant_message(
+            content=ollama_response_content,
+            conversation_id=conversation.conversation_id
+        )
+
         # Create a new message
         return jsonify({
             'conversation_id': conversation.conversation_id,
