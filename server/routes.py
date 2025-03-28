@@ -44,10 +44,8 @@ def create_conversation():
         # Parse the LLM response
         ollama_response = ollama_response.json()
         ollama_response_content = ollama_response.get('response', '')
-        ollama_response_timestamp = ollama_response.get('timestamp', '')
 
-        # TODO: remove the <think> from the response and format timestamp
-        # TODO: separate date and time for use with frontend
+        # TODO: remove the <think> from the response and 
 
         # Create a new assistant message
         assistant_message = Messages.create_assistant_message(
@@ -58,15 +56,17 @@ def create_conversation():
         # Create a new message
         return jsonify({
             'conversation_id': conversation.conversation_id,
-            'message': {
+            'user_message': {
                 'id': user_message.message_id,
                 'content': user_message.content,
                 'timestamp': user_message.timestamp.isoformat(),
                 'sender': user_message.sender
             },
-            'ollama_response': {
-                'content': ollama_response_content,
-                'timestamp': ollama_response_timestamp 
+            'assistant_message': {
+                'id': assistant_message.message_id,
+                'content': assistant_message.content,
+                'timestamp': assistant_message.timestamp.isoformat(),
+                'sender': assistant_message.sender
             }
         }), 201
         
