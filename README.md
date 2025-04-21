@@ -1,6 +1,6 @@
 # Flask Template
 
-A lightweight and modern Flask server template, perfect for building RESTful APIs and web applications.
+A lightweight and modern Ollama Flask server template, perfect for building RESTful APIs and web applications that require prompting to LLMs.
 
 ## Features
 
