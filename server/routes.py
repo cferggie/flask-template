@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from .models import Messages, Conversations
+from .llm.ollama import Ollama
 import requests
 
 routes = Blueprint('routes', __name__)
+ollama = Ollama()
 
 # health check endpoint
 @routes.route('/', methods=['GET'])
@@ -15,8 +17,8 @@ def create_conversation():
     try:
         # Get the user's message from the request
         # this assumes that the request's Content-Type is application/json
-        user_message = request.json.get('message')
-        # user_message = "Hello, how are you?"
+        # user_message = request.json.get('message')
+        user_message = "Hello, how are you?"
         
         # Create conversation first
         conversation = Conversations.create(
@@ -30,26 +32,11 @@ def create_conversation():
         )
 
         # Generate a response using the LLM
-        ollama_response = requests.post(
-            'http://localhost:11434/api/generate',
-            json={
-                'model': 'deepseek-r1',
-                'prompt': user_message.content,
-                'stream': False,
-                'keep_alive': 10,
-                'format': 'json'
-            }
-        )
-        
-        # Parse the LLM response
-        ollama_response = ollama_response.json()
-        ollama_response_content = ollama_response.get('response', '')
-
-        # TODO: remove the <think> from the response and 
+        ollama_response = ollama.generate(user_message.content)
 
         # Create a new assistant message
         assistant_message = Messages.create_assistant_message(
-            content=ollama_response_content,
+            content=ollama_response,
             conversation_id=conversation.conversation_id
         )
 
@@ -77,23 +64,44 @@ def create_conversation():
 @routes.route('/send_message', methods=['GET'])
 def send_message():
     try:
-        content = request.json.get('message')
-        conversation_id = request.json.get('conversation_id')
-        # content = "I am feeling well, thank you for asking"
-        # conversation_id = 1
+        # user_message = request.json.get('message')
+        # conversation_id = request.json.get('conversation_id')
+        user_message = "I am feeling well, thank you for asking"
+        conversation_id = 1
         
         # Create a new message
-        message = Messages.create_user_message(
-            content=content,
+        user_message = Messages.create_user_message(
+            content=user_message,
             conversation_id=conversation_id
         )
-        
+
+        # Get the response from the LLM
+        # TODO: this is not working, we need to get the conversation history
+        conversation = Conversations.get_by_conversation_id(conversation_id)
+        print(f"Conversation: {conversation}")
+        ollama_response, appended_chat_history = ollama.chat(conversation.messages, user_message.content)
+
+        # Create a new assistant message
+        assistant_message = Messages.create_assistant_message(
+            content=ollama_response,
+            conversation_id=conversation_id
+        )
+
+        # Create a new message
         return jsonify({
-            'message': {
-                'message_id': message.message_id,
-                'content': message.content,
-                'timestamp': message.timestamp.isoformat(),
-                'sender': message.sender
+            'conversation_id': conversation.conversation_id,
+            'chat_history': appended_chat_history,
+            'user_message': {
+                'id': user_message.message_id,
+                'content': user_message.content,
+                'timestamp': user_message.timestamp.isoformat(),
+                'sender': user_message.sender
+            },
+            'assistant_message': {
+                'id': assistant_message.message_id,
+                'content': assistant_message.content,
+                'timestamp': assistant_message.timestamp.isoformat(),
+                'sender': assistant_message.sender
             }
         }), 201
         
