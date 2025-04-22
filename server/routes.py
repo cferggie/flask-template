@@ -18,7 +18,7 @@ def create_conversation():
         # Get the user's message from the request
         # this assumes that the request's Content-Type is application/json
         # user_message = request.json.get('message')
-        user_message = "Hello, how are you?"
+        user_message = "This is a test message. Just say hello world."
         
         # Create conversation first
         conversation = Conversations.create(
@@ -44,16 +44,16 @@ def create_conversation():
         return jsonify({
             'conversation_id': conversation.conversation_id,
             'user_message': {
-                'id': user_message.message_id,
+                'message_id': user_message.message_id,
                 'content': user_message.content,
                 'timestamp': user_message.timestamp.isoformat(),
-                'sender': user_message.sender
+                'role': user_message.role
             },
             'assistant_message': {
-                'id': assistant_message.message_id,
+                'message_id': assistant_message.message_id,
                 'content': assistant_message.content,
                 'timestamp': assistant_message.timestamp.isoformat(),
-                'sender': assistant_message.sender
+                'role': assistant_message.role
             }
         }), 201
         
@@ -66,7 +66,7 @@ def send_message():
     try:
         # user_message = request.json.get('message')
         # conversation_id = request.json.get('conversation_id')
-        user_message = "I am feeling well, thank you for asking"
+        user_message = "Is conversation 1 working?"
         conversation_id = 1
         
         # Create a new message
@@ -76,32 +76,32 @@ def send_message():
         )
 
         # Get the response from the LLM
-        # TODO: this is not working, we need to get the conversation history
-        conversation = Conversations.get_by_conversation_id(conversation_id)
-        print(f"Conversation: {conversation}")
-        ollama_response, appended_chat_history = ollama.chat(conversation.messages, user_message.content)
+        conversation = Conversations.get_conversation(conversation_id)
+        conversation_history = [{'role': message.role, 'content': message.content} for message in conversation]
+        ollama_response, appended_chat_history = ollama.chat(conversation_history, user_message.content)
+
 
         # Create a new assistant message
         assistant_message = Messages.create_assistant_message(
-            content=ollama_response,
+            content=ollama_response['content'],
             conversation_id=conversation_id
         )
 
         # Create a new message
         return jsonify({
-            'conversation_id': conversation.conversation_id,
+            'conversation_id': conversation_id,
             'chat_history': appended_chat_history,
             'user_message': {
-                'id': user_message.message_id,
+                'message_id': user_message.message_id,
                 'content': user_message.content,
                 'timestamp': user_message.timestamp.isoformat(),
-                'sender': user_message.sender
+                'role': user_message.role
             },
             'assistant_message': {
-                'id': assistant_message.message_id,
+                'message_id': assistant_message.message_id,
                 'content': assistant_message.content,
                 'timestamp': assistant_message.timestamp.isoformat(),
-                'sender': assistant_message.sender
+                'role': assistant_message.role
             }
         }), 201
         

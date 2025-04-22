@@ -33,9 +33,13 @@ class Conversations(db.Model):
         return conversation
     
     @classmethod
-    def get_by_conversation_id(cls, conversation_id):
-        """Get a conversation by conversation_id"""
-        return cls.query.get(conversation_id)
+    def get_conversation(cls, conversation_id):
+        """Get conversation history by conversation_id"""
+        conversation = cls.query.get(conversation_id)
+        if conversation:
+            return conversation.messages
+        else:
+            return []
     
     @classmethod
     def get_all(cls):
@@ -55,13 +59,21 @@ class Conversations(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    @classmethod
+    def get_messages_by_conversation_id(cls, conversation_id):
+        """Get all messages for a specific conversation"""
+        conversation = cls.get_by_conversation_id(conversation_id)
+        if conversation:
+            return conversation.messages
+        return []
+
 class Messages(db.Model):
     # define table attributes
     message_id = db.Column(db.Integer, primary_key=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
     content = db.Column(db.String(4096), nullable=False)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
-    sender = db.Column(db.String(100), nullable=False) # this will either be "user" or "assistant"
+    role = db.Column(db.String(100), nullable=False) # this will either be "user" or "assistant"
     
     def __repr__(self):
         return f'<Message {self.content}>'
@@ -72,7 +84,7 @@ class Messages(db.Model):
         message = cls(
             content=content,
             conversation_id=conversation_id, # implement this by calling the get_by_conversation_id method on the Conversations model in the call u make
-            sender="user"
+            role="user"
         )
         db.session.add(message)
         db.session.commit()
@@ -84,7 +96,7 @@ class Messages(db.Model):
         message = cls(
             content=content,
             conversation_id=conversation_id,
-            sender="assistant"
+            role="assistant"
         )
         db.session.add(message)
         db.session.commit()
@@ -97,4 +109,3 @@ class Messages(db.Model):
         message.content = content
         db.session.commit()
         return message
-
