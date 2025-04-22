@@ -18,27 +18,21 @@ def health_check():
 def create_conversation():
     try:
         # Get the user's message from the request
-        # this assumes that the request's Content-Type is application/json
-        # user_message = request.json.get('message')
-        user_message = "This is a test message. Just say hello world."        
-        logger.info(f"Creating new conversation with initial message: {user_message[:30]}...")
+        user_message = request.json.get('message')
         
         # Create conversation first
         conversation = Conversations.create(
             summary=user_message,  # TODO: Generate a proper summary using LLM
         )        
-        logger.info(f"Created conversation with ID: {conversation.conversation_id}")
         
         # Create the first message in the conversation
         user_message = Messages.create_user_message(
             content=user_message,
             conversation_id=conversation.conversation_id
         )        
-        logger.info(f"Created user message with ID: {user_message.message_id}")
 
         # Generate a response using the LLM
         try:
-            logger.info("Generating response from Ollama")
             ollama_response = ollama.generate(user_message.content)
 
             # Create a new assistant message
@@ -46,7 +40,7 @@ def create_conversation():
                 content=ollama_response,
                 conversation_id=conversation.conversation_id
             )            
-            logger.info(f"Created assistant message: {assistant_message.content[:50]}... with ID: {assistant_message.message_id}")
+            logger.info(f"Created assistant message: {assistant_message.content[:50]}, with ID: {assistant_message.message_id}")
             
             return jsonify({
                 'conversation_id': conversation.conversation_id,
@@ -91,6 +85,10 @@ def create_conversation():
         
     except Exception as e:
         logger.error(f"Error creating conversation: {str(e)}", exc_info=True)
+        logger.debug(f"Error creating conversation: {str(e)}, 
+                     user message: {user_message.content}, 
+                     conversation ID: {conversation.conversation_id}",
+                     exc_info=True)
         # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
             content="""I'm sorry, but I encountered an internal error while processing your request with the server and couldn't 
@@ -119,12 +117,8 @@ def create_conversation():
 @routes.route('/send_message', methods=['GET'])
 def send_message():
     try:
-        # user_message = request.json.get('message')
-        # conversation_id = request.json.get('conversation_id')
-        user_message = "Is conversation 1 working?"
-        conversation_id = 1
-        
-        logger.info(f"Sending message in conversation ID: {conversation_id}")
+        user_message = request.json.get('message')
+        conversation_id = request.json.get('conversation_id')
         
         # Create a new message
         user_message = Messages.create_user_message(
@@ -132,17 +126,13 @@ def send_message():
             conversation_id=conversation_id
         )
         
-        logger.info(f"Created user message with ID: {user_message.message_id}")
-        
         # Get the response from the LLM
         try:
-            logger.info("Getting conversation history")
             conversation = Conversations.get_conversation(conversation_id)
             conversation_history = [{'role': message.role, 'content': message.content} for message in conversation]
-            
-            logger.info("Generating chat response from Ollama")
-            ollama_response, appended_chat_history = ollama.chat(conversation_history, user_message.content)
 
+            ollama_response, appended_chat_history = ollama.chat(conversation_history, user_message.content)
+            
             assistant_message = Messages.create_assistant_message(
                 content=ollama_response['content'],
                 conversation_id=conversation_id
@@ -193,6 +183,10 @@ def send_message():
             }), 500
     except Exception as e:
         logger.error(f"Error sending message: {str(e)}", exc_info=True)
+        logger.debug(f"Error sending message: {str(e)}, 
+                     user message: {user_message.content}, 
+                     conversation ID: {conversation_id}",
+                     exc_info=True)
         # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
             content="""I’m sorry, but I encountered an internal error while processing your request with the server and couldn’t 
