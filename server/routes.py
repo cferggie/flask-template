@@ -32,15 +32,62 @@ def create_conversation():
         )
 
         # Generate a response using the LLM
-        ollama_response = ollama.generate(user_message.content)
+        try:
+            ollama_response = ollama.generate(user_message.content)
 
-        # Create a new assistant message
+            # Create a new assistant message
+            assistant_message = Messages.create_assistant_message(
+                content=ollama_response,
+                conversation_id=conversation.conversation_id
+            )
+            return jsonify({
+                'conversation_id': conversation.conversation_id,
+                'user_message': {
+                    'message_id': user_message.message_id,
+                    'content': user_message.content,
+                    'timestamp': user_message.timestamp.isoformat(),
+                    'role': user_message.role
+                },
+                'assistant_message': {
+                    'message_id': assistant_message.message_id,
+                    'content': assistant_message.content,
+                    'timestamp': assistant_message.timestamp.isoformat(),
+                    'role': assistant_message.role
+                }
+            }), 201
+        except Exception as e:
+            # Create a new assistant message to tell the user that there was an error
+            assistant_message = Messages.create_assistant_message(
+                content="""I’m sorry, but I encountered an internal error while processing your request with the server and 
+                couldn’t complete it. You can try again in a few moments or simplify your prompt. If the issue persists, please 
+                let me know or contact support.""",
+                conversation_id=conversation.conversation_id
+            )
+            return jsonify({
+                'conversation_id': conversation.conversation_id,
+                'user_message': {
+                    'message_id': user_message.message_id,
+                    'content': user_message.content,
+                    'timestamp': user_message.timestamp.isoformat(),
+                    'role': user_message.role
+                },
+                'assistant_message': {
+                    'message_id': assistant_message.message_id,
+                    'content': assistant_message.content,
+                    'timestamp': assistant_message.timestamp.isoformat(),
+                    'role': assistant_message.role
+                },
+                'error': str(e)
+            }), 500
+        
+    except Exception as e:
+        # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
-            content=ollama_response,
+            content="""I’m sorry, but I encountered an internal error while processing your request with the server and couldn’t 
+            complete it. You can try again in a few moments or simplify your prompt. If the issue persists, please let me know or 
+            contact support.""",
             conversation_id=conversation.conversation_id
         )
-
-        # Create a new message
         return jsonify({
             'conversation_id': conversation.conversation_id,
             'user_message': {
@@ -54,11 +101,9 @@ def create_conversation():
                 'content': assistant_message.content,
                 'timestamp': assistant_message.timestamp.isoformat(),
                 'role': assistant_message.role
-            }
-        }), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            },
+            'error': str(e)
+        }), 500
 
 # send a message in a conversation
 @routes.route('/send_message', methods=['GET'])
@@ -74,23 +119,68 @@ def send_message():
             content=user_message,
             conversation_id=conversation_id
         )
-
+        
         # Get the response from the LLM
-        conversation = Conversations.get_conversation(conversation_id)
-        conversation_history = [{'role': message.role, 'content': message.content} for message in conversation]
-        ollama_response, appended_chat_history = ollama.chat(conversation_history, user_message.content)
+        try:
+            conversation = Conversations.get_conversation(conversation_id)
+            conversation_history = [{'role': message.role, 'content': message.content} for message in conversation]
+            ollama_response, appended_chat_history = ollama.chat(conversation_history, user_message.content)
 
+            assistant_message = Messages.create_assistant_message(
+                content=ollama_response['content'],
+                conversation_id=conversation_id
+            )
 
-        # Create a new assistant message
+            return jsonify({
+                'conversation_id': conversation_id,
+                'chat_history': appended_chat_history,
+                'user_message': {
+                    'message_id': user_message.message_id,
+                    'content': user_message.content,
+                    'timestamp': user_message.timestamp.isoformat(),
+                    'role': user_message.role
+                },
+                'assistant_message': {
+                    'message_id': assistant_message.message_id,
+                    'content': assistant_message.content,
+                    'timestamp': assistant_message.timestamp.isoformat(),
+                    'role': assistant_message.role
+                }
+            }), 201
+        except Exception as e:
+            # Create a new assistant message to tell the user that there was an error
+            assistant_message = Messages.create_assistant_message(
+                content="""I’m sorry, but I encountered an internal error while processing your request with the server and couldn’t 
+                complete it. You can try again in a few moments or simplify your prompt. If the issue persists, please let me know or 
+                contact support.""",
+                conversation_id=conversation_id
+            )
+            return jsonify({
+                'conversation_id': conversation_id,
+                'user_message': {
+                    'message_id': user_message.message_id,
+                    'content': user_message.content,
+                    'timestamp': user_message.timestamp.isoformat(),
+                    'role': user_message.role
+                },
+                'assistant_message': {
+                    'message_id': assistant_message.message_id,
+                    'content': assistant_message.content,
+                    'timestamp': assistant_message.timestamp.isoformat(),
+                    'role': assistant_message.role
+                },
+                'error': str(e)
+            }), 500
+    except Exception as e:
+        # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
-            content=ollama_response['content'],
+            content="""I’m sorry, but I encountered an internal error while processing your request with the server and couldn’t 
+            complete it. You can try again in a few moments or simplify your prompt. If the issue persists, please let me know or 
+            contact support.""",
             conversation_id=conversation_id
         )
-
-        # Create a new message
         return jsonify({
             'conversation_id': conversation_id,
-            'chat_history': appended_chat_history,
             'user_message': {
                 'message_id': user_message.message_id,
                 'content': user_message.content,
@@ -102,12 +192,10 @@ def send_message():
                 'content': assistant_message.content,
                 'timestamp': assistant_message.timestamp.isoformat(),
                 'role': assistant_message.role
-            }
-        }), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
+            },
+            'error': str(e)
+        }), 500
+
 @routes.route('/check_convos', methods=['GET'])
 def check_convos():
     try:
