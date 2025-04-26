@@ -43,7 +43,7 @@ pip install -r requirements.txt
 
 Run the development server:
 ```bash
-python run.py
+python main.py
 ```
 
 The server will start at `http://localhost:5000`
