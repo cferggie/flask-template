@@ -18,7 +18,8 @@ def health_check():
 def db_health_check():
     try:
         # Test database connection with a simple query
-        conversation_count = Conversations.count()
+        conversations = Conversations.get_all()
+        conversation_count = len(conversations)
         logger.debug("Database health check successful")
         return jsonify({
             'status': 'healthy', 
