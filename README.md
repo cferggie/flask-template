@@ -8,6 +8,11 @@ A lightweight and modern Ollama Flask server template, perfect for building REST
 - Ready for API development
 - Easy to extend and customize
 
+## Requirements
+
+- [Ollama](https://ollama.com/) - LLM server that needs to be installed locally
+- This application uses the `gemma3:12b` model
+
 ## Setup
 
 1. Clone the repository:
@@ -16,13 +21,20 @@ git clone https://github.com/yourusername/flask-template.git
 cd flask-template
 ```
 
-2. Create a virtual environment and activate it:
+2. Install and run Ollama:
+   - Download from [https://ollama.com/download](https://ollama.com/download)
+   - After installation, pull the Gemma 3 12B model:
+   ```bash
+   ollama pull gemma3:12b
+   ```
+
+3. Create a virtual environment and activate it:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+4. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
