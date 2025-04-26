@@ -59,14 +59,6 @@ class Conversations(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-    @classmethod
-    def get_messages_by_conversation_id(cls, conversation_id):
-        """Get all messages for a specific conversation"""
-        conversation = cls.get_by_conversation_id(conversation_id)
-        if conversation:
-            return conversation.messages
-        return []
-
 class Messages(db.Model):
     # define table attributes
     message_id = db.Column(db.Integer, primary_key=True)
