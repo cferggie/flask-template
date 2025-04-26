@@ -10,8 +10,28 @@ logger = setup_logger(__name__)
 # health check endpoint
 @routes.route('/', methods=['GET'])
 def health_check():
-    logger.debug("Health check endpoint called")
-    return jsonify({'status': 'healthy'})
+    logger.debug("Health check endpoint called. Returning 200 status.")
+    return jsonify({'status': 'healthy'}), 200
+
+# database health check endpoint
+@routes.route('/db_health', methods=['GET'])
+def db_health_check():
+    try:
+        # Test database connection with a simple query
+        conversation_count = Conversations.count()
+        logger.debug("Database health check successful")
+        return jsonify({
+            'status': 'healthy', 
+            'database': 'connected',
+            'conversations_count': conversation_count
+        }), 200
+    except Exception as e:
+        logger.error(f"Database health check failed: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'unhealthy',
+            'database': 'disconnected',
+            'error': str(e)
+        }), 500
 
 # create a conversation
 @routes.route('/create_conversation', methods=['GET'])
@@ -189,7 +209,7 @@ def send_message():
                      exc_info=True)
         # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
-            content="""I’m sorry, but I encountered an internal error while processing your request with the server and couldn’t 
+            content="""I'm sorry, but I encountered an internal error while processing your request with the server and couldn't 
             complete it. You can try again in a few moments or simplify your prompt. If the issue persists, please let me know or 
             contact support.""",
             conversation_id=conversation_id
