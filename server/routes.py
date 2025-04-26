@@ -43,7 +43,7 @@ def create_conversation():
         
         # Create conversation first
         conversation = Conversations.create(
-            summary=user_message,  # TODO: Generate a proper summary using LLM
+            summary=user_message,  # TODO: Generate a proper summary using LLM. This should be done while processing the first message
         )        
         
         # Create the first message in the conversation
@@ -61,7 +61,7 @@ def create_conversation():
                 content=ollama_response,
                 conversation_id=conversation.conversation_id
             )            
-            logger.info(f"Created assistant message: {assistant_message.content[:50]}, with ID: {assistant_message.message_id}")
+            logger.info(f"New conversation created with ID: {conversation.conversation_id}")
             
             return jsonify({
                 'conversation_id': conversation.conversation_id,
@@ -106,10 +106,7 @@ def create_conversation():
         
     except Exception as e:
         logger.error(f"Error creating conversation: {str(e)}", exc_info=True)
-        logger.debug(f"Error creating conversation: {str(e)}, 
-                     user message: {user_message.content}, 
-                     conversation ID: {conversation.conversation_id}",
-                     exc_info=True)
+        logger.debug(f"Error creating conversation: {str(e)}, user message: {user_message.content}, conversation ID: {conversation.conversation_id}", exc_info=True)
         # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
             content="""I'm sorry, but I encountered an internal error while processing your request with the server and couldn't 
@@ -159,7 +156,7 @@ def send_message():
                 conversation_id=conversation_id
             )
             
-            logger.info(f"Created assistant message: {assistant_message.content[:50]}... with ID: {assistant_message.message_id}")
+            logger.info(f"Successfully sent message and received LLM response in conversation {conversation_id}")
 
             return jsonify({
                 'conversation_id': conversation_id,
@@ -204,10 +201,7 @@ def send_message():
             }), 500
     except Exception as e:
         logger.error(f"Error sending message: {str(e)}", exc_info=True)
-        logger.debug(f"Error sending message: {str(e)}, 
-                     user message: {user_message.content}, 
-                     conversation ID: {conversation_id}",
-                     exc_info=True)
+        logger.debug(f"Error sending message: {str(e)}, user message: {user_message.content}, conversation ID: {conversation_id}", exc_info=True)
         # Create a new assistant message to tell the user that there was an error
         assistant_message = Messages.create_assistant_message(
             content="""I'm sorry, but I encountered an internal error while processing your request with the server and couldn't 
@@ -219,18 +213,18 @@ def send_message():
             'error': str(e)
         }), 500
 
-@routes.route('/check_convos', methods=['GET'])
-def check_convos():
+@routes.route('/get_conversation', methods=['GET'])
+def get_conversation():
     try:
-        logger.info("Checking conversation with ID: 1")
+        conversation_id = request.json.get('conversation_id')
+
         # Get convo by id
-        conversation = Conversations.get_by_conversation_id(1)
+        conversation = Conversations.get_conversation(conversation_id)
         
         return jsonify({
             'conversation': {
-                'conversation_id': conversation.conversation_id,
-                'summary': conversation.summary,
-                'messages': [message.content for message in conversation.messages]
+                'conversation_id': conversation_id,
+                'messages': [message.content for message in conversation]
             }
         }), 200
     except Exception as e:
