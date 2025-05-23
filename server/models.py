@@ -14,7 +14,7 @@ class Conversations(db.Model):
     """
     # define table attributes
     conversation_id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-5))))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone(timedelta(hours=-4))))
     messages = db.relationship('Messages', backref='conversation', lazy=True, cascade='all, delete-orphan')
     summary = db.Column(db.String(50), nullable=False)  
 
